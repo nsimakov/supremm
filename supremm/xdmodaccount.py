@@ -73,8 +73,14 @@ class XDMoDAcct(Accounting):
 
     def getbylocaljobid(self, localjobid):
         """ Yields one or more Jobs that match the localjobid """
-        query = self._query + " AND jf.local_job_id_raw = %s"
-        data = (self._resource_id, localjobid)
+        query = self._query + " AND jf.local_job_id_raw IN ({})".format(localjobid)
+        print query
+        data = (self._resource_id, )
+
+        if self._nthreads != None and self._threadidx != None:
+            query += " AND (CRC32(jf.local_job_id_raw) %% %s) = %s"
+            data = data + (self._nthreads, self._threadidx)
+        query += " ORDER BY jf.end_time_ts ASC"
 
         for job in  self.executequery(query, data):
             yield job
